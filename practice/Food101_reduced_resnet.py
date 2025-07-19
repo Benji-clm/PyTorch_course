@@ -6,6 +6,7 @@ import torch
 import torchvision
 import random
 import torchinfo
+import matplotlib.pyplot as plt
 from torch import nn
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
@@ -24,18 +25,21 @@ def main():
     test_dir = image_path / "test"
     print(f"Training data directory: {train_dir} | Testing data directory: {test_dir}")
 
-    train_transform_trivial_augment = transforms.Compose([
-        transforms.Resize((128, 128)),
-        transforms.TrivialAugmentWide(num_magnitude_bins=31),
-        transforms.ToTensor()
+    normalize = transforms.Normalize([0.485,0.456,0.406], [0.229,0.224,0.225])
+    train_transform = transforms.Compose([
+        transforms.RandomResizedCrop(128, scale=(0.8,1.0)),
+        transforms.RandomHorizontalFlip(),
+        transforms.ToTensor(),
+        normalize
     ])
-
     test_transform = transforms.Compose([
-        transforms.Resize((128, 128)),
-        transforms.ToTensor()
+        transforms.Resize(128),
+        transforms.CenterCrop(128),
+        transforms.ToTensor(),
+        normalize
     ])
 
-    train_data_augmented = datasets.ImageFolder(train_dir, transform=train_transform_trivial_augment)
+    train_data_augmented = datasets.ImageFolder(train_dir, transform=train_transform)
     test_data_simple = datasets.ImageFolder(test_dir, transform=test_transform)
 
     BATCH_SIZE = 16
@@ -101,8 +105,9 @@ def main():
             self.layer4 = ResidualBlock(256, 512, downsample=True)
 
             self.classifier = nn.Sequential(
-                nn.AdaptiveAvgPool2d((1, 1)),  # (B, 512, 1, 1)
-                nn.Flatten(),                  # (B, 512)
+                nn.AdaptiveAvgPool2d(1),
+                nn.Flatten(),
+                nn.Dropout(0.3),
                 nn.Linear(512, num_classes)
             )
 
@@ -132,7 +137,8 @@ def main():
     print(next(model.parameters()).device) # sanity check that its on CUDA
 
     loss_fn = nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+    optimizer = torch.optim.Adam(model.parameters(), lr=3e-4, weight_decay=1e-4)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=2, factor=0.5)
 
     model_results = train(
         model=model,
@@ -140,6 +146,7 @@ def main():
         test_dataloader=test_dataloader_simple,
         optimizer=optimizer,
         device=device,
+        scheduler=scheduler,
         loss_fn=loss_fn,
         epochs=20
     )

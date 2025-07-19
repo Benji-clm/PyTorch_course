@@ -148,6 +148,7 @@ def train(model: torch.nn.Module,
           test_dataloader: torch.utils.data.DataLoader, 
           optimizer: torch.optim.Optimizer,
           device: torch.device,
+          scheduler: torch.optim.lr_scheduler,
           loss_fn: torch.nn.Module = nn.CrossEntropyLoss(),
           epochs: int = 5):
     
@@ -170,6 +171,8 @@ def train(model: torch.nn.Module,
                                         dataloader=test_dataloader,
                                         loss_fn=loss_fn,
                                         device=device)
+        
+        scheduler.step(test_loss)
         
         # 4. Print out what's happening
         print(
