@@ -7,6 +7,7 @@ from torchvision import datasets
 from torchvision import transforms
 from torchvision.transforms import ToTensor
 from torch.utils.data import DataLoader
+from torchinfo import summary
 
 
 print(f"Torch version: {torch.__version__}")
@@ -79,6 +80,8 @@ model_1 = MNISTModel1(in_features=1,
                      hidden_units=64,
                      out_features=10).to(device)
 
+
+print(summary(model_1, input_size=(1, 1, 28, 28))) # seeing a single MNIST digit going through the model to see the parameters
 
 loss_fn = torch.nn.CrossEntropyLoss()
 optimizer = torch.optim.SGD(
