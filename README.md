@@ -1,1 +1,1 @@
-# Jupyter Notebooks from PyTorch Course - # Free storage
+# Jupyter Notebooks from PyTorch Course
